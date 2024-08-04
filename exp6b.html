@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Array Average Calculator Simulator</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .container {
+            display: flex;
+            flex: 1;
+        }
+        .left-panel {
+            flex: 2;
+            background: linear-gradient(to bottom right, #1e3c72, #2a5298);
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            margin: 10px;
+        }
+        .right-panel {
+            flex: 1;
+            background: linear-gradient(to bottom right, #cb2d3e, #ef473a);
+            padding: 20px;
+            color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            margin: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        #code-area {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Courier New', monospace;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            height: calc(100% - 50px);
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #execute { background-color: #4CAF50; }
+        #next-step { background-color: #2196F3; }
+        #restart { background-color: #f44336; }
+        button:hover { opacity: 0.8; }
+        .highlight { background-color: rgba(255, 255, 0, 0.3); }
+        #variables, #output, #result {
+            margin-top: 20px;
+        }
+        #result {
+            background-color: rgba(255, 255, 0, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #author {
+            margin-top: 20px;
+            font-weight: bold;
+            background-color: yellow;
+            color: black;
+            padding: 5px;
+            border-radius: 5px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <div id="code-area"></div>
+            <div class="buttons">
+                <button id="execute">Execute</button>
+                <button id="next-step" disabled>Next Step</button>
+                <button id="restart">Restart</button>
+            </div>
+        </div>
+        <div class="right-panel">
+            <div id="variables">
+                <h3>Variables:</h3>
+                <pre id="variables-text"></pre>
+            </div>
+            <div id="output">
+                <h3>Output:</h3>
+                <pre id="output-text"></pre>
+            </div>
+            <div id="result">
+                <h3>Result:</h3>
+                <pre id="result-text"></pre>
+            </div>
+            <div id="author">
+                A.Mallaiah, Assoc.Professor, ECE Dept., SRGEC
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const codeLines = [
+            '#include <stdio.h>',
+            '',
+            'int main() {',
+            '    int n;',
+            '    printf("Enter the number of elements: ");',
+            '    scanf("%d", &n);',
+            '',
+            '    int numbers[n];',
+            '',
+            '    printf("Enter the elements:\\n");',
+            '    for (int i = 0; i < n; i++) {',
+            '        scanf("%d", &numbers[i]);',
+            '    }',
+            '',
+            '    int sum = 0;',
+            '    int *ptr = numbers; // Initialize pointer to the first element',
+            '',
+            '    for (int i = 0; i < n; i++) {',
+            '        sum += *ptr; // Dereference the pointer to get the value',
+            '        ptr++; // Move the pointer to the next element',
+            '    }',
+            '',
+            '    float average = (float)sum / n;',
+            '    printf("Average: %.2f\\n", average);',
+            '',
+            '    return 0;',
+            '}'
+        ];
+
+        let currentLine = 0;
+        let n, numbers, sum, ptr, average;
+        let executionStarted = false;
+        let executionComplete = false;
+
+        function displayCode() {
+            const codeArea = document.getElementById('code-area');
+            codeArea.innerHTML = codeLines.map((line, index) => 
+                `<div class="${index === currentLine ? 'highlight' : ''}">${line}</div>`
+            ).join('');
+        }
+
+        function updateVariables() {
+            const variablesText = document.getElementById('variables-text');
+            variablesText.textContent = `n: ${n || 'undefined'}
+numbers: ${numbers ? '[' + numbers.join(', ') + ']' : 'undefined'}
+sum: ${sum || 'undefined'}
+ptr: ${ptr || 'undefined'}
+average: ${average || 'undefined'}`;
+        }
+
+        function appendOutput(text) {
+            const outputText = document.getElementById('output-text');
+            outputText.textContent += text + '\n';
+        }
+
+        function setResult(text) {
+            document.getElementById('result-text').textContent = text;
+        }
+
+        function executeStep() {
+            if (!executionStarted || executionComplete) return;
+
+            switch (currentLine) {
+                case 4:
+                    appendOutput("Enter the number of elements: ");
+                    break;
+                case 5:
+                    n = parseInt(prompt("Enter the number of elements:"));
+                    if (isNaN(n) || n <= 0) {
+                        alert("Invalid input. Please enter a positive integer.");
+                        return;
+                    }
+                    appendOutput(n.toString());
+                    numbers = new Array(n);
+                    break;
+                case 9:
+                    appendOutput("Enter the elements:");
+                    break;
+                case 11:
+                    for (let i = 0; i < n; i++) {
+                        numbers[i] = parseInt(prompt(`Enter element ${i + 1}:`));
+                        if (isNaN(numbers[i])) {
+                            alert("Invalid input. Please enter a number.");
+                            return;
+                        }
+                        appendOutput(numbers[i].toString());
+                    }
+                    break;
+                case 14:
+                    sum = 0;
+                    ptr = 0;
+                    break;
+                case 17:
+                    for (let i = 0; i < n; i++) {
+                        sum += numbers[ptr];
+                        ptr++;
+                    }
+                    break;
+                case 22:
+                    average = sum / n;
+                    break;
+                case 23:
+                    appendOutput(`Average: ${average.toFixed(2)}`);
+                    setResult("Program execution completed.");
+                    executionComplete = true;
+                    document.getElementById('next-step').disabled = true;
+                    break;
+            }
+
+            currentLine++;
+            if (currentLine >= codeLines.length) {
+                currentLine = codeLines.length - 1;
+                executionComplete = true;
+                document.getElementById('next-step').disabled = true;
+            }
+            displayCode();
+            updateVariables();
+        }
+
+        function execute() {
+            executionStarted = true;
+            document.getElementById('next-step').disabled = false;
+            document.getElementById('execute').disabled = true;
+            displayCode();
+        }
+
+        function restart() {
+            currentLine = 0;
+            n = numbers = sum = ptr = average = undefined;
+            executionStarted = false;
+            executionComplete = false;
+            document.getElementById('output-text').textContent = '';
+            document.getElementById('result-text').textContent = '';
+            document.getElementById('variables-text').textContent = '';
+            document.getElementById('next-step').disabled = true;
+            document.getElementById('execute').disabled = false;
+            displayCode();
+            updateVariables();
+        }
+
+        document.getElementById('execute').addEventListener('click', execute);
+        document.getElementById('next-step').addEventListener('click', executeStep);
+        document.getElementById('restart').addEventListener('click', restart);
+
+        displayCode();
+    </script>
+</body>
+</html>

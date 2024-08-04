@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factorial Series Sum Simulator</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .container {
+            display: flex;
+            flex: 1;
+        }
+        .left-panel {
+            flex: 2;
+            background: linear-gradient(to bottom right, #1e3c72, #2a5298);
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            margin: 10px;
+        }
+        .right-panel {
+            flex: 1;
+            background: linear-gradient(to bottom right, #cb2d3e, #ef473a);
+            padding: 20px;
+            color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            margin: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        #code-area {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Courier New', monospace;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            height: calc(100% - 50px);
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #execute { background-color: #4CAF50; }
+        #next-step { background-color: #2196F3; }
+        #restart { background-color: #f44336; }
+        button:hover { opacity: 0.8; }
+        .highlight { background-color: rgba(255, 255, 0, 0.3); }
+        #variables, #output, #result {
+            margin-top: 20px;
+        }
+        #result {
+            background-color: rgba(255, 255, 0, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #author {
+            margin-top: 20px;
+            font-weight: bold;
+            background-color: yellow;
+            color: black;
+            padding: 5px;
+            border-radius: 5px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <div id="code-area"></div>
+            <div class="buttons">
+                <button id="execute">Execute</button>
+                <button id="next-step" disabled>Next Step</button>
+                <button id="restart">Restart</button>
+            </div>
+        </div>
+        <div class="right-panel">
+            <div id="variables">
+                <h3>Variables:</h3>
+                <p>n: <span id="n-value">undefined</span></p>
+                <p>sum: <span id="sum-value">undefined</span></p>
+                <p>i: <span id="i-value">undefined</span></p>
+            </div>
+            <div id="output">
+                <h3>Output:</h3>
+                <pre id="output-text"></pre>
+            </div>
+            <div id="result">
+                <h3>Result:</h3>
+                <pre id="result-text"></pre>
+            </div>
+            <div id="author">
+                A.Mallaiah, Assoc.Professor, ECE Dept., SRGEC
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const codeLines = [
+            '#include <stdio.h>',
+            '',
+            '// Function to calculate factorial',
+            'double factorial(int n) {',
+            '    if (n == 0 || n == 1) {',
+            '        return 1;',
+            '    }',
+            '    return n * factorial(n - 1);',
+            '}',
+            '',
+            'int main() {',
+            '    int n;',
+            '    double sum = 0.0;',
+            '',
+            '    // Get input from user',
+            '    printf("Enter the value of n: ");',
+            '    scanf("%d", &n);',
+            '',
+            '    // Calculate the sum of the series',
+            '    for (int i = 1; i <= n; i++) {',
+            '        sum += 1.0 / factorial(i);',
+            '    }',
+            '    // Print the result',
+            '    printf("Sum of the series 1/1! + 1/2! + ... + 1/%d! is: %f\\n", n, sum);',
+            '',
+            '    return 0;',
+            '}'
+        ];
+
+        let currentLine = 0;
+        let n, sum, i;
+        let executionStarted = false;
+        let executionComplete = false;
+
+        function displayCode() {
+            const codeArea = document.getElementById('code-area');
+            codeArea.innerHTML = codeLines.map((line, index) => 
+                `<div class="${index === currentLine ? 'highlight' : ''}">${line}</div>`
+            ).join('');
+        }
+
+        function updateVariables() {
+            document.getElementById('n-value').textContent = n !== undefined ? n : 'undefined';
+            document.getElementById('sum-value').textContent = sum !== undefined ? sum.toFixed(6) : 'undefined';
+            document.getElementById('i-value').textContent = i !== undefined ? i : 'undefined';
+        }
+
+        function appendOutput(text) {
+            const outputText = document.getElementById('output-text');
+            outputText.textContent += text + '\n';
+        }
+
+        function setResult(text) {
+            document.getElementById('result-text').textContent = text;
+        }
+
+        function factorial(n) {
+            if (n == 0 || n == 1) {
+                return 1;
+            }
+            return n * factorial(n - 1);
+        }
+
+        function executeStep() {
+            if (!executionStarted || executionComplete) return;
+
+            switch (currentLine) {
+                case 15:
+                    appendOutput("Enter the value of n: ");
+                    break;
+                case 16:
+                    n = parseInt(prompt("Enter the value of n:"));
+                    if (isNaN(n) || n < 1) {
+                        alert("Invalid input. Please enter a positive integer.");
+                        return;
+                    }
+                    appendOutput(n.toString());
+                    sum = 0.0;
+                    break;
+                case 19:
+                    i = 1;
+                    break;
+                case 20:
+                    if (i <= n) {
+                        sum += 1.0 / factorial(i);
+                        i++;
+                        currentLine = 19;
+                    }
+                    break;
+                case 23:
+                    appendOutput(`Sum of the series 1/1! + 1/2! + ... + 1/${n}! is: ${sum.toFixed(6)}`);
+                    setResult("Program execution completed.");
+                    executionComplete = true;
+                    document.getElementById('next-step').disabled = true;
+                    break;
+            }
+
+            currentLine++;
+            if (currentLine >= codeLines.length) {
+                currentLine = codeLines.length - 1;
+                executionComplete = true;
+                document.getElementById('next-step').disabled = true;
+            }
+            displayCode();
+            updateVariables();
+        }
+
+        function execute() {
+            executionStarted = true;
+            document.getElementById('next-step').disabled = false;
+            document.getElementById('execute').disabled = true;
+            displayCode();
+        }
+
+        function restart() {
+            currentLine = 0;
+            n = sum = i = undefined;
+            executionStarted = false;
+            executionComplete = false;
+            document.getElementById('output-text').textContent = '';
+            document.getElementById('result-text').textContent = '';
+            document.getElementById('next-step').disabled = true;
+            document.getElementById('execute').disabled = false;
+            displayCode();
+            updateVariables();
+        }
+
+        document.getElementById('execute').addEventListener('click', execute);
+        document.getElementById('next-step').addEventListener('click', executeStep);
+        document.getElementById('restart').addEventListener('click', restart);
+
+        displayCode();
+    </script>
+</body>
+</html>

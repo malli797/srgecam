@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Addition Simulator</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .container {
+            display: flex;
+            flex: 1;
+        }
+        .left-panel {
+            flex: 2;
+            background: linear-gradient(to bottom right, #1e3c72, #2a5298);
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            margin: 10px;
+        }
+        .right-panel {
+            flex: 1;
+            background: linear-gradient(to bottom right, #cb2d3e, #ef473a);
+            padding: 20px;
+            color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            margin: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        #code-area {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Courier New', monospace;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            height: calc(100% - 50px);
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #execute { background-color: #4CAF50; }
+        #next-step { background-color: #2196F3; }
+        #restart { background-color: #f44336; }
+        button:hover { opacity: 0.8; }
+        .highlight { background-color: rgba(255, 255, 0, 0.3); }
+        #variables, #output, #result {
+            margin-top: 20px;
+        }
+        #result {
+            background-color: rgba(255, 255, 0, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #author {
+            margin-top: 20px;
+            font-weight: bold;
+            background-color: yellow;
+            color: black;
+            padding: 5px;
+            border-radius: 5px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <div id="code-area"></div>
+            <div class="buttons">
+                <button id="execute">Execute</button>
+                <button id="next-step" disabled>Next Step</button>
+                <button id="restart">Restart</button>
+            </div>
+        </div>
+        <div class="right-panel">
+            <div id="variables">
+                <h3>Variables:</h3>
+                <p>matrix1: <span id="matrix1-value">undefined</span></p>
+                <p>matrix2: <span id="matrix2-value">undefined</span></p>
+                <p>result: <span id="result-value">undefined</span></p>
+            </div>
+            <div id="output">
+                <h3>Output:</h3>
+                <pre id="output-text"></pre>
+            </div>
+            <div id="result">
+                <h3>Result:</h3>
+                <pre id="result-text"></pre>
+            </div>
+            <div id="author">
+                A.Mallaiah, Assoc.Professor, ECE Dept., SRGEC
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const codeLines = [
+            '#include <stdio.h>',
+            '',
+            '#define SIZE 3',
+            '',
+            'int main() {',
+            '    int matrix1[SIZE][SIZE];',
+            '    int matrix2[SIZE][SIZE];',
+            '    int result[SIZE][SIZE];',
+            '',
+            '    // Reading matrix1 from the keyboard',
+            '    printf("Enter elements of matrix1 (%dx%d):\\n", SIZE, SIZE);',
+            '    for (int i = 0; i < SIZE; i++) {',
+            '        for (int j = 0; j < SIZE; j++) {',
+            '            scanf("%d", &matrix1[i][j]);',
+            '        }',
+            '    }',
+            '',
+            '    // Reading matrix2 from the keyboard',
+            '    printf("Enter elements of matrix2 (%dx%d):\\n", SIZE, SIZE);',
+            '    for (int i = 0; i < SIZE; i++) {',
+            '        for (int j = 0; j < SIZE; j++) {',
+            '            scanf("%d", &matrix2[i][j]);',
+            '        }',
+            '    }',
+            '',
+            '    // Addition of matrices',
+            '    for (int i = 0; i < SIZE; i++) {',
+            '        for (int j = 0; j < SIZE; j++) {',
+            '            result[i][j] = matrix1[i][j] + matrix2[i][j];',
+            '        }',
+            '    }',
+            '',
+            '    // Displaying the result',
+            '    printf("Sum of matrices:\\n");',
+            '    for (int i = 0; i < SIZE; i++) {',
+            '        for (int j = 0; j < SIZE; j++) {',
+            '            printf("%d ", result[i][j]);',
+            '        }',
+            '        printf("\\n");',
+            '    }',
+            '',
+            '    return 0;',
+            '}'
+        ];
+
+        let currentLine = 0;
+        let matrix1, matrix2, result;
+        let executionStarted = false;
+        let executionComplete = false;
+
+        function displayCode() {
+            const codeArea = document.getElementById('code-area');
+            codeArea.innerHTML = codeLines.map((line, index) => 
+                `<div class="${index === currentLine ? 'highlight' : ''}">${line}</div>`
+            ).join('');
+        }
+
+        function updateVariables() {
+            document.getElementById('matrix1-value').textContent = matrix1 ? JSON.stringify(matrix1) : 'undefined';
+            document.getElementById('matrix2-value').textContent = matrix2 ? JSON.stringify(matrix2) : 'undefined';
+            document.getElementById('result-value').textContent = result ? JSON.stringify(result) : 'undefined';
+        }
+
+        function appendOutput(text) {
+            const outputText = document.getElementById('output-text');
+            outputText.textContent += text + '\n';
+        }
+
+        function setResult(text) {
+            document.getElementById('result-text').textContent = text;
+        }
+
+        function executeStep() {
+            if (!executionStarted || executionComplete) return;
+
+            switch (currentLine) {
+                case 10:
+                    appendOutput(`Enter elements of matrix1 (${SIZE}x${SIZE}):`);
+                    matrix1 = Array(SIZE).fill().map(() => Array(SIZE).fill(0));
+                    break;
+                case 13:
+                    for (let i = 0; i < SIZE; i++) {
+                        for (let j = 0; j < SIZE; j++) {
+                            matrix1[i][j] = parseInt(prompt(`Enter element for matrix1[${i}][${j}]:`));
+                        }
+                    }
+                    break;
+                case 18:
+                    appendOutput(`Enter elements of matrix2 (${SIZE}x${SIZE}):`);
+                    matrix2 = Array(SIZE).fill().map(() => Array(SIZE).fill(0));
+                    break;
+                case 21:
+                    for (let i = 0; i < SIZE; i++) {
+                        for (let j = 0; j < SIZE; j++) {
+                            matrix2[i][j] = parseInt(prompt(`Enter element for matrix2[${i}][${j}]:`));
+                        }
+                    }
+                    break;
+                case 26:
+                    result = Array(SIZE).fill().map(() => Array(SIZE).fill(0));
+                    for (let i = 0; i < SIZE; i++) {
+                        for (let j = 0; j < SIZE; j++) {
+                            result[i][j] = matrix1[i][j] + matrix2[i][j];
+                        }
+                    }
+                    break;
+                case 33:
+                    appendOutput("Sum of matrices:");
+                    for (let i = 0; i < SIZE; i++) {
+                        appendOutput(result[i].join(' '));
+                    }
+                    setResult("Program execution completed.");
+                    executionComplete = true;
+                    document.getElementById('next-step').disabled = true;
+                    break;
+            }
+
+            currentLine++;
+            if (currentLine >= codeLines.length) {
+                currentLine = codeLines.length - 1;
+                executionComplete = true;
+                document.getElementById('next-step').disabled = true;
+            }
+            displayCode();
+            updateVariables();
+        }
+
+        function execute() {
+            executionStarted = true;
+            document.getElementById('next-step').disabled = false;
+            document.getElementById('execute').disabled = true;
+            displayCode();
+        }
+
+        function restart() {
+            currentLine = 0;
+            matrix1 = matrix2 = result = undefined;
+            executionStarted = false;
+            executionComplete = false;
+            document.getElementById('output-text').textContent = '';
+            document.getElementById('result-text').textContent = '';
+            document.getElementById('next-step').disabled = true;
+            document.getElementById('execute').disabled = false;
+            displayCode();
+            updateVariables();
+        }
+
+        document.getElementById('execute').addEventListener('click', execute);
+        document.getElementById('next-step').addEventListener('click', executeStep);
+        document.getElementById('restart').addEventListener('click', restart);
+
+        const SIZE = 3;
+        displayCode();
+    </script>
+</body>
+</html>

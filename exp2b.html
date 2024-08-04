@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadratic Equation Solver Simulator</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .container {
+            display: flex;
+            flex: 1;
+        }
+        .left-panel {
+            flex: 2;
+            background: linear-gradient(to bottom right, #1e3c72, #2a5298);
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            margin: 10px;
+        }
+        .right-panel {
+            flex: 1;
+            background: linear-gradient(to bottom right, #cb2d3e, #ef473a);
+            padding: 20px;
+            color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            margin: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        #code-area {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Courier New', monospace;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            height: calc(100% - 50px);
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #execute { background-color: #4CAF50; }
+        #next-step { background-color: #2196F3; }
+        #restart { background-color: #f44336; }
+        button:hover { opacity: 0.8; }
+        .highlight { background-color: rgba(255, 255, 0, 0.3); }
+        #variables, #output, #result {
+            margin-top: 20px;
+        }
+        #result {
+            background-color: rgba(255, 255, 0, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #author {
+            margin-top: 20px;
+            font-weight: bold;
+            background-color: yellow;
+            color: black;
+            padding: 5px;
+            border-radius: 5px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <div id="code-area"></div>
+            <div class="buttons">
+                <button id="execute">Execute</button>
+                <button id="next-step" disabled>Next Step</button>
+                <button id="restart">Restart</button>
+            </div>
+        </div>
+        <div class="right-panel">
+            <div id="variables">
+                <h3>Variables:</h3>
+                <p>a: <span id="a-value">undefined</span></p>
+                <p>b: <span id="b-value">undefined</span></p>
+                <p>c: <span id="c-value">undefined</span></p>
+                <p>discriminant: <span id="discriminant-value">undefined</span></p>
+                <p>root1: <span id="root1-value">undefined</span></p>
+                <p>root2: <span id="root2-value">undefined</span></p>
+                <p>realPart: <span id="realPart-value">undefined</span></p>
+                <p>imagPart: <span id="imagPart-value">undefined</span></p>
+            </div>
+            <div id="output">
+                <h3>Output:</h3>
+                <pre id="output-text"></pre>
+            </div>
+            <div id="result">
+                <h3>Result:</h3>
+                <pre id="result-text"></pre>
+            </div>
+            <div id="author">
+                A.Mallaiah, Assoc.Professor, ECE Dept., SRGEC
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const codeLines = [
+            '#include <stdio.h>',
+            '#include <math.h>',
+            '',
+            'int main() {',
+            '    double a, b, c, discriminant, root1, root2, realPart, imagPart;',
+            '',
+            '    printf("Enter coefficients a, b and c: ");',
+            '    scanf("%lf %lf %lf", &a, &b, &c);',
+            '',
+            '    discriminant = b*b - 4*a*c;',
+            '',
+            '    // Check if a is 0',
+            '    if (a == 0) {',
+            '        printf("This is not a quadratic equation.\\n");',
+            '        return 1;',
+            '    }',
+            '',
+            '    // Condition for real and different roots',
+            '    if (discriminant > 0) {',
+            '        root1 = (-b + sqrt(discriminant)) / (2*a);',
+            '        root2 = (-b - sqrt(discriminant)) / (2*a);',
+            '        printf("root1 = %.2lf and root2 = %.2lf\\n", root1, root2);',
+            '    }',
+            '    ',
+            '    // Condition for real and equal roots',
+            '    else if (discriminant == 0) {',
+            '        root1 = root2 = -b / (2*a);',
+            '        printf("root1 = root2 = %.2lf\\n", root1);',
+            '    }',
+            '',
+            '    // If roots are not real',
+            '    else {',
+            '        realPart = -b / (2*a);',
+            '        imagPart = sqrt(-discriminant) / (2*a);',
+            '        printf("root1 = %.2lf+%.2lfi and root2 = %.2f-%.2fi\\n", realPart, imagPart, realPart, imagPart);',
+            '    }',
+            '',
+            '    return 0;',
+            '}'
+        ];
+
+        let currentLine = 0;
+        let a, b, c, discriminant, root1, root2, realPart, imagPart;
+        let executionStarted = false;
+        let executionComplete = false;
+
+        function displayCode() {
+            const codeArea = document.getElementById('code-area');
+            codeArea.innerHTML = codeLines.map((line, index) => 
+                `<div class="${index === currentLine ? 'highlight' : ''}">${line}</div>`
+            ).join('');
+        }
+
+        function updateVariables() {
+            document.getElementById('a-value').textContent = a !== undefined ? a.toFixed(2) : 'undefined';
+            document.getElementById('b-value').textContent = b !== undefined ? b.toFixed(2) : 'undefined';
+            document.getElementById('c-value').textContent = c !== undefined ? c.toFixed(2) : 'undefined';
+            document.getElementById('discriminant-value').textContent = discriminant !== undefined ? discriminant.toFixed(2) : 'undefined';
+            document.getElementById('root1-value').textContent = root1 !== undefined ? root1.toFixed(2) : 'undefined';
+            document.getElementById('root2-value').textContent = root2 !== undefined ? root2.toFixed(2) : 'undefined';
+            document.getElementById('realPart-value').textContent = realPart !== undefined ? realPart.toFixed(2) : 'undefined';
+            document.getElementById('imagPart-value').textContent = imagPart !== undefined ? imagPart.toFixed(2) : 'undefined';
+        }
+
+        function appendOutput(text) {
+            const outputText = document.getElementById('output-text');
+            outputText.textContent += text + '\n';
+        }
+
+        function setResult(text) {
+            document.getElementById('result-text').textContent = text;
+        }
+
+        function executeStep() {
+            if (!executionStarted || executionComplete) return;
+
+            switch (currentLine) {
+                case 6:
+                    appendOutput("Enter coefficients a, b and c: ");
+                    break;
+                case 7:
+                    a = parseFloat(prompt("Enter coefficient a:"));
+                    b = parseFloat(prompt("Enter coefficient b:"));
+                    c = parseFloat(prompt("Enter coefficient c:"));
+                    if (isNaN(a) || isNaN(b) || isNaN(c)) {
+                        alert("Invalid input. Please enter numbers.");
+                        return;
+                    }
+                    appendOutput(`${a} ${b} ${c}`);
+                    break;
+                case 9:
+                    discriminant = b*b - 4*a*c;
+                    break;
+                case 12:
+                    if (a === 0) {
+                        appendOutput("This is not a quadratic equation.");
+                        setResult("Program execution completed.");
+                        executionComplete = true;
+                        document.getElementById('next-step').disabled = true;
+                    }
+                    break;
+                case 18:
+                    if (discriminant > 0) {
+                        root1 = (-b + Math.sqrt(discriminant)) / (2*a);
+                        root2 = (-b - Math.sqrt(discriminant)) / (2*a);
+                        appendOutput(`root1 = ${root1.toFixed(2)} and root2 = ${root2.toFixed(2)}`);
+                    } else if (discriminant === 0) {
+                        root1 = root2 = -b / (2*a);
+                        appendOutput(`root1 = root2 = ${root1.toFixed(2)}`);
+                    } else {
+                        realPart = -b / (2*a);
+                        imagPart = Math.sqrt(-discriminant) / (2*a);
+                        appendOutput(`root1 = ${realPart.toFixed(2)}+${imagPart.toFixed(2)}i and root2 = ${realPart.toFixed(2)}-${imagPart.toFixed(2)}i`);
+                    }
+                    setResult("Program execution completed.");
+                    executionComplete = true;
+                    document.getElementById('next-step').disabled = true;
+                    break;
+            }
+
+            currentLine++;
+            if (currentLine >= codeLines.length) {
+                currentLine = codeLines.length - 1;
+                executionComplete = true;
+                document.getElementById('next-step').disabled = true;
+            }
+            displayCode();
+            updateVariables();
+        }
+
+        function execute() {
+            executionStarted = true;
+            document.getElementById('next-step').disabled = false;
+            document.getElementById('execute').disabled = true;
+            displayCode();
+        }
+
+        function restart() {
+            currentLine = 0;
+            a = b = c = discriminant = root1 = root2 = realPart = imagPart = undefined;
+            executionStarted = false;
+            executionComplete = false;
+            document.getElementById('output-text').textContent = '';
+            document.getElementById('result-text').textContent = '';
+            document.getElementById('next-step').disabled = true;
+            document.getElementById('execute').disabled = false;
+            displayCode();
+            updateVariables();
+        }
+
+        document.getElementById('execute').addEventListener('click', execute);
+        document.getElementById('next-step').addEventListener('click', executeStep);
+        document.getElementById('restart').addEventListener('click', restart);
+
+        displayCode();
+    </script>
+</body>
+</html>
